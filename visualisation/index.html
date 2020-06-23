@@ -1,0 +1,157 @@
+<html>
+<head>
+<style>
+body {
+    font-size: 18px;
+}
+canvas {
+    border: 2px solid black;
+}
+#canvas {cursor: grab;}
+#canvas:active {cursor: grabbing;}
+#game-canvas {cursor: pointer;}
+.label-3d {
+    position: absolute;
+    padding: 1px;
+    pointer-events: none; /*to stop grab hand briefly disappearing*/
+}
+.label-3d-point {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 3px;
+    background-color: black;
+}
+#labels-3d {
+    user-select: none; /*disable text highlighting*/
+}
+input[type='button'] {
+    font-size: inherit;
+    font-family: monospace;
+    padding: 2px 5px 2px 5px;
+    margin: 0.2em;
+    background-color: #faa;
+    border-radius: 5px;
+    cursor: pointer;
+}
+input[type='button'].pressed { background-color: #afa; }
+input[type='button'].click { background-color: #fd8; }
+input[type='button']:focus { outline: none; }
+kbd {
+    background-color: #eee;
+    border: 1px solid black;
+    padding: 2px 5px 2px 5px;
+    margin: 3px;
+    border-radius: 3px;
+    display: inline-block;
+    text-align: center;
+    font-size: 14px;
+}
+h2, h3, h4{ text-align: center; }
+h2 { margin: 0.5em 0 0.5em 0; }
+h3,h4 { margin: 0.3em 0 0.3em 0; }
+div.flex-row {
+    display: flex;
+    flex-direction: row;
+}
+div.flex-row > * {
+    flex: 1;
+}
+.keyboard-keys {
+    text-align: center;
+}
+label {
+  font-family: monospace;
+}
+</style>
+</head>
+
+<body>
+<div style='display: inline-block;'>
+  <h2>Space View</h2>
+  <!-- tabindex so focusable and can drag outside without highlighting -->
+  <canvas width='800' height='600' id='canvas' tabindex='0'></canvas>
+  <div id='labels-3d'></div>
+</div>
+<div style='display: inline-block;'>
+  <h2>Camera View</h2>
+  <!-- have to add tabindex to make canvas focusable for keyboard events -->
+  <canvas width='800' height='600' id='game-canvas' tabindex='1'></canvas>
+</div>
+<div class='flex-row' style='width: 1200px;'>
+  <div>
+    <h2>Controls</h2>
+    <div class='flex-row'>
+      <div>
+        <h3>Space View</h3>
+        <div>Drag to pan.</div>
+        <div>Scroll to zoom.</div>
+      </div>
+      <div>
+        <h3>Camera View</h3>
+        <div>Click on canvas. (<kbd>ESC</kbd> to release)</div>
+        <div>Look with mouse.</div>
+        <div class='flex-row' style='align-items: center;'>
+          <span>Walk</span>
+          <div class='keyboard-keys'>
+            <kbd>W</kbd><br><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd>
+          </div>
+        </div>
+        <div class='flex-row'>
+          <span>Fly</span>
+          <div class='keyboard-keys'>
+            <kbd>Z</kbd><kbd>X</kbd>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style='text-align: center;'>
+    <h2>Options</h2>
+    <!-- should have created these buttons dynamically in JS -->
+    <input type='button' onclick='display_frustum=!display_frustum'
+    value='Frustum' class='pressed toggle'></input>
+    <input type='button' onclick='draw_camera=!draw_camera';
+    value='Draw Camera' class='pressed toggle'></input>
+    <input type='button' onclick='draw_world=!draw_world'
+    value='Draw World' class='pressed toggle'></input>
+    <input type='button' onclick='auto_spin=!auto_spin'
+    value='Spin' class='toggle'></input>
+    <input type='button' onclick='show_cam_pos=!show_cam_pos'
+    value='Camera Position' class='toggle'></input>
+    <input type='button' onclick='plot_points=!plot_points'
+    value='Reference Points' class='toggle'></input>
+    <br>
+    <input type='button' onclick='reset()'
+    value='Reset Views' class='click'></input>
+    <input type='button' onclick='origin_game_cam()'
+    value='Origin' class='click'></input>
+    <h3>Projection</h3>
+    <div class='flex-row'>
+      <div>
+        <input type='button' onclick="projection='perspective'"
+        value='Perspective' class='pressed flip-projection'></input>
+        <h4>Field of View</h4>
+        <input id='fov-range'
+        oninput='fov=this.value/180*Math.PI;this.nextElementSibling.innerText=this.value;'
+        type='range' max=180></input>
+        <label for='fov-range'></label>
+      </div>
+      <div>
+        <input type='button' onclick="projection='orthographic'"
+        value='Orthographic' class='flip-projection'></input>
+        <h4><code>x</code>-Clip</h4>
+        <input id='x_clip-range'
+        oninput='x_clip=this.value;this.nextElementSibling.innerText=parseFloat(this.value).toFixed(1);'
+        type='range' max=10 step=0.1></input>
+        <label for='x_clip-range'></label>
+      </div>
+    </div>
+  </div>
+</div>
+<script src='helpers.js'></script>
+<script src='shaders.js'></script>
+<script src='script.js'></script>
+</body>
+</html>

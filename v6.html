@@ -1,0 +1,113 @@
+<html>
+<body>
+<canvas id='canvas' width='800' height='600'
+        style='border: 1px solid black;'></canvas>
+<p>Controls: Move with WASD and fly with ZX.</p>
+<script>
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+
+let faces = [
+    // Each element describes a face: [color, [vertices]].
+    [[230, 25, 75],  [[-2, 0, 1], [-2, 0, 2], [-1, 0, 2], [-1, 0, 1]]],
+    [[60, 180, 75],  [[-2, 1, 1], [-2, 1, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[255, 225, 25], [[-2, 0, 1], [-2, 0, 2], [-2, 1, 2], [-2, 1, 1]]],
+    [[67, 99, 216],  [[-1, 0, 1], [-1, 0, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[245, 130, 49], [[-2, 0, 1], [-1, 0, 1], [-1, 1, 1], [-2, 1, 1]]],
+    [[145, 30, 180], [[-2, 0, 2], [-1, 0, 2], [-1, 1, 2], [-2, 1, 2]]],
+
+    [[70, 240, 240], [[1, 0, 1], [1, 0, 2], [2, 0, 2], [2, 0, 1]]],
+    [[240, 50, 230], [[1, 1, 1], [1, 1, 2], [2, 1, 2], [2, 1, 1]]],
+    [[188, 246, 12], [[1, 0, 1], [1, 0, 2], [1, 1, 2], [1, 1, 1]]],
+    [[250, 190, 190],[[2, 0, 1], [2, 0, 2], [2, 1, 2], [2, 1, 1]]],
+    [[0, 128, 128],  [[1, 0, 1], [2, 0, 1], [2, 1, 1], [1, 1, 1]]],
+    [[230, 190, 255],[[1, 0, 2], [2, 0, 2], [2, 1, 2], [1, 1, 2]]],
+
+    [[154, 99, 36],  [[-0.5, 0, 4], [-0.5, 0, 5], [0.5, 0, 5], [0.5, 0, 4]]],
+    [[0, 0, 0],      [[-0.5, 0, 4], [-0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[128, 0, 0],    [[-0.5, 0, 5], [0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[0, 0, 117],    [[0.5, 0, 5], [0.5, 0, 4], [0.0, 1, 4.5]]],
+    [[128, 128, 128],[[0.5, 0, 4], [-0.5, 0, 4], [0.0, 1, 4.5]]],
+];
+
+function distance(a, b) {
+    return ((a[0] - b[0])**2 + (a[1] - b[1])**2 + (a[2] - b[2])**2) ** 0.5;
+}
+
+function centroid(vertices) {
+    let sum = [0, 0, 0];
+    for (let vertex of vertices) {
+        sum[0] += vertex[0];
+        sum[1] += vertex[1];
+        sum[2] += vertex[2];
+    }
+    let n = vertices.length;
+    return [sum[0] / n, sum[1] / n, sum[2] / n];
+}
+
+// Define a position for the camera [x, y, z].
+let cam = [0, 2, -5];
+
+// Put the rendering code into a function so that the view changes as the
+// camera moves about.
+function update() {
+    faces.sort(function (face_a, face_b) {
+        let vertices_a = face_a[1];
+        let vertices_b = face_b[1];
+        return distance(centroid(vertices_b), cam) -
+               distance(centroid(vertices_a), cam);
+    });
+
+    // Clear the canvas between renders.
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let face of faces) {
+        let [color, vertices] = face;
+        ctx.fillStyle = 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
+        ctx.beginPath();
+        for (let j = 0; j < vertices.length; j++) {
+            // This syntax unpacks the right-hand-side (e.g. [0, 1, 0]) into
+            // three variables (x = 0, y = 1, z = 0 here).
+            let [x, y, z] = vertices[j];
+
+            // Because we render with the camera always at the origin, we need
+            // to bring the vertex to the camera, rather than move the camera
+            // to it.
+            x = x - cam[0];
+            y = y - cam[1];
+            z = z - cam[2];
+
+            let fov = 90;
+            let scale = (canvas.width / 2) / Math.tan(fov/2 * Math.PI / 180);
+            let xx = canvas.width / 2 + x / z * scale;
+            let yy = canvas.height / 2 - y / z * scale;
+
+            if (j == 0) ctx.moveTo(xx, yy);
+            else ctx.lineTo(xx, yy);
+        }
+        ctx.fill();
+    }
+    // Update again. We use requestAnimationFrame so that the browser knows
+    // this is a function that repaints the screen and can optimise for it.
+    requestAnimationFrame(update);
+}
+
+// Start the infinte recursive rendering loop.
+requestAnimationFrame(update);
+
+// Step defines how much to move when a key is pressed.
+let step = 0.5;
+// To actaully move the camera bout, we add an "event listener" that is called
+// each time you press down a key. We can then use this to move the camera
+// about.
+document.addEventListener('keypress', function(event) {
+    if (event.key == 'w') cam[2] += step;
+    if (event.key == 'a') cam[0] -= step;
+    if (event.key == 's') cam[2] -= step;
+    if (event.key == 'd') cam[0] += step;
+    if (event.key == 'z') cam[1] += step;
+    if (event.key == 'x') cam[1] -= step;
+});
+
+</script>
+</body>
+</html>

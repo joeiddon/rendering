@@ -1,0 +1,87 @@
+<html>
+<body>
+<canvas id='canvas' width='800' height='600'
+        style='border: 1px solid black;'></canvas>
+<script>
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+
+let faces = [
+    // Each element describes a face: [color, [vertices]].
+    [[230, 25, 75],  [[-2, 0, 1], [-2, 0, 2], [-1, 0, 2], [-1, 0, 1]]],
+    [[60, 180, 75],  [[-2, 1, 1], [-2, 1, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[255, 225, 25], [[-2, 0, 1], [-2, 0, 2], [-2, 1, 2], [-2, 1, 1]]],
+    [[67, 99, 216],  [[-1, 0, 1], [-1, 0, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[245, 130, 49], [[-2, 0, 1], [-1, 0, 1], [-1, 1, 1], [-2, 1, 1]]],
+    [[145, 30, 180], [[-2, 0, 2], [-1, 0, 2], [-1, 1, 2], [-2, 1, 2]]],
+
+    [[70, 240, 240], [[1, 0, 1], [1, 0, 2], [2, 0, 2], [2, 0, 1]]],
+    [[240, 50, 230], [[1, 1, 1], [1, 1, 2], [2, 1, 2], [2, 1, 1]]],
+    [[188, 246, 12], [[1, 0, 1], [1, 0, 2], [1, 1, 2], [1, 1, 1]]],
+    [[250, 190, 190],[[2, 0, 1], [2, 0, 2], [2, 1, 2], [2, 1, 1]]],
+    [[0, 128, 128],  [[1, 0, 1], [2, 0, 1], [2, 1, 1], [1, 1, 1]]],
+    [[230, 190, 255],[[1, 0, 2], [2, 0, 2], [2, 1, 2], [1, 1, 2]]],
+
+    [[154, 99, 36],  [[-0.5, 0, 4], [-0.5, 0, 5], [0.5, 0, 5], [0.5, 0, 4]]],
+    [[0, 0, 0],      [[-0.5, 0, 4], [-0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[128, 0, 0],    [[-0.5, 0, 5], [0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[0, 0, 117],    [[0.5, 0, 5], [0.5, 0, 4], [0.0, 1, 4.5]]],
+    [[128, 128, 128],[[0.5, 0, 4], [-0.5, 0, 4], [0.0, 1, 4.5]]],
+];
+
+function distance(a, b) {
+    // Returns the distance between the two 3D points a and b.
+    return ((a[0] - b[0])**2 + (a[1] - b[1])**2 + (a[2] - b[2])**2) ** 0.5;
+}
+
+function centroid(vertices) {
+    // Returns the centroid of the input vertices. This is the "average point"
+    // which can be used to assign a distance to the face.
+    let sum = [0, 0, 0];
+    for (let vertex of vertices) {
+        sum[0] += vertex[0];
+        sum[1] += vertex[1];
+        sum[2] += vertex[2];
+    }
+    let n = vertices.length;
+    return [sum[0] / n, sum[1] / n, sum[2] / n];
+}
+
+let x_clip = 3;
+
+// Before drawing the faces, we should sort them so that the ones further away
+// are rendered first. This is done by calculating the distance to the face's
+// centroid. If the distance to face_a is greater than the distance to face_b,
+// then the difference will be negative and face_a will be sorted to appear
+// before face_b (and thus rendered first).
+// This sort means further away faces don't "block" closer faces. Note that
+// there are some situations where this method fails. For example, with a block
+// sitting on the far side of a square: the block's faces are further away than
+// than the square, so the block will be rendered first, but the square will
+// then be drawn on top of it.
+faces.sort(function (face_a, face_b) {
+    let vertices_a = face_a[1];
+    let vertices_b = face_b[1];
+    return distance(centroid(vertices_b), [0, 0, 0]) -
+           distance(centroid(vertices_a), [0, 0, 0]);
+});
+
+for (let face of faces) {
+    let [color, vertices] = face;
+    ctx.fillStyle = 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
+    ctx.beginPath();
+    for (let j = 0; j < vertices.length; j++) {
+        let vertex = vertices[j];
+
+        let scale = (canvas.width / 2) /  x_clip;
+        let x = canvas.width / 2 + vertex[0] * scale;
+        let y = canvas.height / 2 - vertex[1] * scale;
+
+        if (j == 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.fill();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,162 @@
+<html>
+<body>
+<canvas id='canvas' width='800' height='600'
+        style='border: 1px solid black;'></canvas>
+<p>Controls: Click on canvas (ESC to release).
+Look with mouse. Move with WASD and fly with ZX.</p>
+<script>
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+
+let faces = [
+    // Each element describes a face: [color, [vertices]].
+    [[230, 25, 75],  [[-2, 0, 1], [-2, 0, 2], [-1, 0, 2], [-1, 0, 1]]],
+    [[60, 180, 75],  [[-2, 1, 1], [-2, 1, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[255, 225, 25], [[-2, 0, 1], [-2, 0, 2], [-2, 1, 2], [-2, 1, 1]]],
+    [[67, 99, 216],  [[-1, 0, 1], [-1, 0, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[245, 130, 49], [[-2, 0, 1], [-1, 0, 1], [-1, 1, 1], [-2, 1, 1]]],
+    [[145, 30, 180], [[-2, 0, 2], [-1, 0, 2], [-1, 1, 2], [-2, 1, 2]]],
+
+    [[70, 240, 240], [[1, 0, 1], [1, 0, 2], [2, 0, 2], [2, 0, 1]]],
+    [[240, 50, 230], [[1, 1, 1], [1, 1, 2], [2, 1, 2], [2, 1, 1]]],
+    [[188, 246, 12], [[1, 0, 1], [1, 0, 2], [1, 1, 2], [1, 1, 1]]],
+    [[250, 190, 190],[[2, 0, 1], [2, 0, 2], [2, 1, 2], [2, 1, 1]]],
+    [[0, 128, 128],  [[1, 0, 1], [2, 0, 1], [2, 1, 1], [1, 1, 1]]],
+    [[230, 190, 255],[[1, 0, 2], [2, 0, 2], [2, 1, 2], [1, 1, 2]]],
+
+    [[154, 99, 36],  [[-0.5, 0, 4], [-0.5, 0, 5], [0.5, 0, 5], [0.5, 0, 4]]],
+    [[0, 0, 0],      [[-0.5, 0, 4], [-0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[128, 0, 0],    [[-0.5, 0, 5], [0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[0, 0, 117],    [[0.5, 0, 5], [0.5, 0, 4], [0.0, 1, 4.5]]],
+    [[128, 128, 128],[[0.5, 0, 4], [-0.5, 0, 4], [0.0, 1, 4.5]]],
+];
+
+function distance(a, b) {
+    return ((a[0] - b[0])**2 + (a[1] - b[1])**2 + (a[2] - b[2])**2) ** 0.5;
+}
+
+function centroid(vertices) {
+    let sum = [0, 0, 0];
+    for (let vertex of vertices) {
+        sum[0] += vertex[0];
+        sum[1] += vertex[1];
+        sum[2] += vertex[2];
+    }
+    let n = vertices.length;
+    return [sum[0] / n, sum[1] / n, sum[2] / n];
+}
+
+let cam = [0, 2, -5];
+// The yaw and pitch angles are in radian units. Yaw is how much we are looking
+// left-to-right and pitch is how much we are looking up-to-down.
+let yaw = 0;
+let pitch = -0.2;
+
+function update() {
+    faces.sort(function (face_a, face_b) {
+        let vertices_a = face_a[1];
+        let vertices_b = face_b[1];
+        return distance(centroid(vertices_b), cam) -
+               distance(centroid(vertices_a), cam);
+    });
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let face of faces) {
+        let [color, vertices] = face;
+        ctx.fillStyle = 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
+        ctx.beginPath();
+        for (let j = 0; j < vertices.length; j++) {
+            // Using "prime notation" (e.g. x_), before assigning back to
+            // original name (e.g. x). If assigned directly, then the
+            // transformed x would be used in the calculation of the
+            // transformed z, which expects the pre-transformed x. Similarly,
+            // in the next tranformation, the pre-transformed y is needed in
+            // calculating the z. Not the neatest solution (matrices would be
+            // better), but I think the clearest for explanation.
+            let [x, y, z] = vertices[j];
+
+            // Translate the vertex to the camera.
+            x = x - cam[0];
+            y = y - cam[1];
+            z = z - cam[2];
+
+            // Rotate the vertex about the y-axis by the yaw amount. This
+            // calculation can be derived using polar coordinates or a rotation
+            // matrix. See note above about the x_ notation.
+            x_ = x * Math.cos(yaw) - z * Math.sin(yaw);
+            y_ = y
+            z_ = x * Math.sin(yaw) + z * Math.cos(yaw);
+
+            [x, y, z] = [x_, y_, z_]
+
+            // Similarly with the yaw, rotate the vertex about the x-axis by
+            // the pitch amount.
+            x_ = x
+            y_ = -z * Math.sin(pitch) + y * Math.cos(pitch);
+            z_ = z * Math.cos(pitch) + y * Math.sin(pitch);
+
+            [x, y, z] = [x_, y_, z_]
+
+            let fov = 50;
+            let scale = (canvas.width / 2) / Math.tan(fov/2 * Math.PI / 180);
+            let xx = canvas.width / 2 + x / z * scale;
+            let yy = canvas.height / 2 - y / z * scale;
+
+            // We need to ensure we only render objects in front of the camera
+            // this is when z is positive. (If we forgot this check, then the
+            // faces behind the camera would be "mirrored" infront. Try it!)
+            if (z > 0) {
+                if (j == 0) ctx.moveTo(xx, yy);
+                else ctx.lineTo(xx, yy);
+            }
+        }
+        ctx.fill();
+    }
+    requestAnimationFrame(update);
+}
+
+requestAnimationFrame(update);
+
+
+// Since the camera is no longer just facing down the z-axis, we need to be
+// able to step 90 degrees to the left of where we are facing. This is what the
+// take_step function does. It calculates how much we need to add the camera's
+// x- and z-components to move it in the correct direction by a distance step.
+// Note that the direction argument is in radians.
+let step = 0.5;
+function take_step(direction) {
+    cam[0] += step * Math.sin(yaw + direction);
+    cam[2] += step * Math.cos(yaw + direction);
+}
+
+// The key press function makes use of the take_step function, apart from when
+// flying, in which case we just add or subtract step from the z-component.
+document.addEventListener('keypress', function(event) {
+    if (event.key == 'w') take_step(0);
+    if (event.key == 'a') take_step(-Math.PI/2);
+    if (event.key == 's') take_step(Math.PI);
+    if (event.key == 'd') take_step(Math.PI/2);
+    if (event.key == 'z') cam[1] += step;
+    if (event.key == 'x') cam[1] -= step;
+});
+
+// These last two event listeners, are a simple way of creating a user
+// interface to be able to look around (adjust the yaw and pitch values).
+// This first event listener says to capture the mouse when the canvas is
+// clicked.
+canvas.addEventListener('click', function() {
+    canvas.requestPointerLock();
+});
+
+// This event listener listens for movement of the mouse. If the mouse is not
+// locked then the pointerLockElement attribute of document will be null and
+// the function just returns. Otherwise we adjust the yaw and pitch amounts so
+// that the camera looks around in accordance with the movement of the mouse.
+canvas.addEventListener('mousemove', function(event) {
+    if (document.pointerLockElement != canvas) return;
+    let sensitivity = 0.005;
+    yaw += event.movementX * sensitivity;
+    pitch -= event.movementY * sensitivity;
+});
+</script>
+</body>
+</html>

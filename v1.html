@@ -1,0 +1,23 @@
+<html>
+<body>
+<canvas id='canvas' width='800' height='600'
+        style='border: 1px solid black;'></canvas>
+<script>
+// Get a reference to the canvas HTML element.
+let canvas = document.getElementById('canvas');
+// Get a rendering context to the canvas - allowing us to draw shapes.
+let ctx = canvas.getContext('2d');
+
+// Draw a basic red rectangle. Commands are fairly self-explanatory. Note that
+// the coordinates are (x, y) with x horizontal (0 <--> canvas.width) and y
+// vertical (0 <--> canvas.height).
+ctx.fillStyle = 'rgb(255, 0, 0)';
+ctx.beginPath();
+ctx.moveTo(50, 50);
+ctx.lineTo(500, 500);
+ctx.lineTo(500, 50);
+ctx.closePath();
+ctx.fill();
+</script>
+</body>
+</html>

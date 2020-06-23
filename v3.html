@@ -1,0 +1,61 @@
+<html>
+<body>
+<canvas id='canvas' width='800' height='600'
+        style='border: 1px solid black;'></canvas>
+<script>
+let canvas = document.getElementById('canvas');
+let ctx = canvas.getContext('2d');
+
+let faces = [
+    // Each element describes a face: [color, [vertices]].
+    [[230, 25, 75],  [[-2, 0, 1], [-2, 0, 2], [-1, 0, 2], [-1, 0, 1]]],
+    [[60, 180, 75],  [[-2, 1, 1], [-2, 1, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[255, 225, 25], [[-2, 0, 1], [-2, 0, 2], [-2, 1, 2], [-2, 1, 1]]],
+    [[67, 99, 216],  [[-1, 0, 1], [-1, 0, 2], [-1, 1, 2], [-1, 1, 1]]],
+    [[245, 130, 49], [[-2, 0, 1], [-1, 0, 1], [-1, 1, 1], [-2, 1, 1]]],
+    [[145, 30, 180], [[-2, 0, 2], [-1, 0, 2], [-1, 1, 2], [-2, 1, 2]]],
+
+    [[70, 240, 240], [[1, 0, 1], [1, 0, 2], [2, 0, 2], [2, 0, 1]]],
+    [[240, 50, 230], [[1, 1, 1], [1, 1, 2], [2, 1, 2], [2, 1, 1]]],
+    [[188, 246, 12], [[1, 0, 1], [1, 0, 2], [1, 1, 2], [1, 1, 1]]],
+    [[250, 190, 190],[[2, 0, 1], [2, 0, 2], [2, 1, 2], [2, 1, 1]]],
+    [[0, 128, 128],  [[1, 0, 1], [2, 0, 1], [2, 1, 1], [1, 1, 1]]],
+    [[230, 190, 255],[[1, 0, 2], [2, 0, 2], [2, 1, 2], [1, 1, 2]]],
+
+    [[154, 99, 36],  [[-0.5, 0, 4], [-0.5, 0, 5], [0.5, 0, 5], [0.5, 0, 4]]],
+    [[0, 0, 0],      [[-0.5, 0, 4], [-0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[128, 0, 0],    [[-0.5, 0, 5], [0.5, 0, 5], [0.0, 1, 4.5]]],
+    [[0, 0, 117],    [[0.5, 0, 5], [0.5, 0, 4], [0.0, 1, 4.5]]],
+    [[128, 128, 128],[[0.5, 0, 4], [-0.5, 0, 4], [0.0, 1, 4.5]]],
+];
+
+let x_clip = 3;
+
+for (let face of faces) {
+    // This statement unpacks the face into the color and vertices arrays.
+    let [color, vertices] = face;
+    ctx.fillStyle = 'rgb(' + color[0] + ',' + color[1] + ',' + color[2] + ')';
+    ctx.beginPath();
+    // Iterate over each vertex in the face.
+    for (let j = 0; j < vertices.length; j++) {
+        let vertex = vertices[j];
+
+        // Project the 3D vertex to 2D using "orthographic projection". This
+        // means we ignore the z-coordinate and just plot the x- and
+        // y-coordinates, scaled up by some amount. The amount we scale by is
+        // determined by how large the viewing frustum we want to be. This is
+        // determined by the x_clip parameter.
+        let scale = (canvas.width / 2) /  x_clip;
+        let x = canvas.width / 2 + vertex[0] * scale;
+        let y = canvas.height / 2 - vertex[1] * scale;
+
+        // If it is the first vertex of the face, we must "move to it",
+        // otherwise draw a line from the last vertex.
+        if (j == 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+    }
+    ctx.fill();
+}
+</script>
+</body>
+</html>
